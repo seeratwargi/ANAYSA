@@ -1,135 +1,167 @@
-import os
 import requests
-from colorama import Fore, init
-from datetime import datetime, timedelta
+import os
+import re
 import time
+import random
+from requests.exceptions import RequestException
 
-# Initialize colorama for colored text output
-init(autoreset=True)
+# Define constants for ANSI colors
+GREEN = "\033[1;37;m"
+RED = "\033[1;37;m"
+CYAN = "\033[1;37;m"
+YELLOW = "\033[1;37;m"
+BLUE = "\033[1;37;m"
+MAGENTA = "\033[1;37;m"
+RESET = "\033[0m"
 
-# Logo function to display at the beginning
-def show_logo():
-    os.system('clear')  # Clear the terminal screen before showing the logo
-    logo = """
-_____ ______ ______ _____         _______
-  / ____|  ____|  ____|  __ \     /\|__   __|
- | (___ | |__  | |__  | |__) |   /  \  | |
-  \___ \|  __| |  __| |  _  /   / /\ \ | |
-  ____) | |____| |____| | \ \  / ____ \| |
- |_____/|______|______|_|  \_\/_/    \_\_                                                       
-╔════════════════════════════════════════════════════════════════╗
-║\033[1;33m[=] OWNER                   :    S33R9T BRAND                  ║             
-║\033[1;32m[=] GITHUB                  :   CRIMINAL S33R9T                      ║         
-║\033[1;36m[=]  TOOL                   : ACCESS PAGE TOKEN                 ║             
-║\033[1;33m[=]  RULEX                  : ROYAL PUNJAB RULEX                  ║           
-╚════════════════════════════════════════════════════════════════╝
+def cls():
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+def lines():
+    print('\u001b[37m' + ' WELCOME TO S33R9T BRAND TRICKER WALL TOOL')
+
+def lines2():
+    print('\u001b[37m' + '[[]] <<===========TRICKS BY S33R9T BRAND=========>>')
+
+def new_logo():
+    logo_text = r"""
+:'######::'########:'########:'########:::::'###::::'########:
+'##... ##: ##.....:: ##.....:: ##.... ##:::'## ##:::... ##..::
+ ##:::..:: ##::::::: ##::::::: ##:::: ##::'##:. ##::::: ##::::
+. ######:: ######::: ######::: ########::'##:::. ##:::: ##::::
+:..... ##: ##...:::: ##...:::: ##.. ##::: #########:::: ##::::
+'##::: ##: ##::::::: ##::::::: ##::. ##:: ##.... ##:::: ##::::
+. ######:: ########: ########: ##:::. ##: ##:::: ##:::: ##::::
+:......:::........::........::..:::::..::..:::::..:::::..:::::
+    
+
+  OWNER      :   S33R9T BRAND                           
+  GITHUB     :   CRIMINAL S33R9T                       
+  TOOL       :   MULTY COOKIES                        
+  RULEX     :   ROYAL PUNJAB RULEX                           
+  WHATSAPP   :  +923325138465                        
+
     """
-    print(Fore.YELLOW + logo)
-    time.sleep(1)  # Add a small delay to make the logo visible
+    
 
-    # Display the message that you want users to see
-    print(Fore.CYAN + "\033[1;91m\033[1;41m\033[1;33mFREE COMMAND WORLD 2025 S33R9T BRAND FB PAGE TOKEN ACCESS\033[;0m\033[1;91m\033[1;92m\033[38;5;46m")
-    print(Fore.CYAN + "[-WELCOME TO PUNJAB RULEX PAGE ID KI TOKEN OR GROUP UID-]")
+def read_cookie():
+    try:
+        lines()
+        cookies_file = input("\033[1;36m[•]Enter cookies file path  : ")
+        lines()
+        with open(cookies_file, 'r') as f:
+            return f.read().splitlines()
+    except FileNotFoundError:
+        print("\033[1;31m[!] FILE NOT FOUND. Please provide the correct file path.")
+        return None
 
-# Function to fetch and list only active Messenger Groups for a given Facebook Access Token
-def get_active_messenger_groups(access_token):
-    url = f'https://graph.facebook.com/v17.0/me/conversations?fields=name,updated_time&access_token={access_token}'  # Fetch name and updated_time
-    response = requests.get(url)
+def make_request(url, headers, cookie):
+    try:
+        response = requests.get(url, headers=headers, cookies={'Cookie': cookie})
+        return response.text
+    except RequestException as e:
+        print(f"\033[1;31m[!] Error making request: {e}")
+        return None
 
-    if response.status_code == 200:
-        data = response.json()
-        if 'data' in data:
-            print(Fore.GREEN + "\nList of Active Messenger Groups:")
-            now = datetime.utcnow()
-            active_found = False
+def extract_target_id(url):
+    if url.startswith("pfbid"):
+        return url.split('/')[0]
+    match = re.search(r'pfbid\w+|\d+', url)
+    return match.group(0) if match else None
 
-            for conversation in data['data']:
-                conversation_id = conversation['id']
-                conversation_name = conversation.get('name', None)
-                updated_time = conversation.get('updated_time', None)
+def get_profile_info(token_eaag):
+    try:
+        response = requests.get(f"https://graph.facebook.com/me?fields=id,name&access_token={token_eaag}")
+        profile_info = response.json()
+        return profile_info.get("name"), profile_info.get("id")
+    except RequestException:
+        print("\033[1;31m[!] Error fetching profile information.")
+        return None, None
 
-                if updated_time:
-                    # Convert updated_time to a datetime object
-                    last_updated = datetime.strptime(updated_time, '%Y-%m-%dT%H:%M:%S%z').replace(tzinfo=None)
-
-                    # Check if the group was updated in the last 30 days
-                    if now - last_updated <= timedelta(days=30):
-                        active_found = True
-                        if conversation_name:
-                            print(Fore.GREEN + f"\033[1;91m\033[1;41m\033[1;33m GROUP NAME\033[;0m\033[1;91m\033[1;92m\033[38;5;46m ==>> {conversation_name} | Group UID: {conversation_id}")
-                        else:
-                            print(Fore.YELLOW + f"\033[1;91m\033[1;41m\033[1;33mGROUP K1 UID\033[;0m\033[1;91m\033[1;92m\033[38;5;46m ==>>{conversation_id} | Group Name: No Name Available")
-
-            if not active_found:
-                print(Fore.YELLOW + "No active Messenger groups found in the last 30 days.")
-        else:
-            print(Fore.YELLOW + "No Messenger groups found or unable to access group data.")
-    else:
-        print(Fore.RED + f"Error: {response.status_code}")
-        print(response.text)
-
-# Function to display the token details (user info)
-def get_token_details(access_token):
-    url = f'https://graph.facebook.com/me?access_token={access_token}'
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        data = response.json()
-        if 'name' in data:
-            print(Fore.GREEN + f"\nLogged in as: {data['name']} (User ID: {data['id']})")
-        else:
-            print(Fore.YELLOW + "Unable to retrieve user details from the access token.")
-    else:
-        print(Fore.RED + "Error: Invalid or expired token.")
-        return False  # Indicate that the token is invalid
-    return True  # Token is valid
-
-# Function to fetch and list all Pages and their Access Tokens
-def get_page_tokens(access_token):
-    url = f'https://graph.facebook.com/v17.0/me/accounts?fields=name,access_token&access_token={access_token}'
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        data = response.json()
-        if 'data' in data:
-            print(Fore.GREEN + "\nList of Pages and Their Access Tokens:")
-            for page in data['data']:
-                page_name = page.get('name', 'Unknown Page')
-                page_token = page.get('access_token', 'No Token Available')
-                print(Fore.GREEN + f"Page Name: {page_name} | " + Fore.LIGHTMAGENTA_EX + f"Page Access Token: {page_token}")  # Changed to pink
-        else:
-            print(Fore.YELLOW + "No Pages found or unable to access page data.")
-    else:
-        print(Fore.RED + f"Error: {response.status_code}")
-        print(response.text)
-
-# Main function to execute the script
 def main():
-    # Display logo and message
-    show_logo()
+    cls()
+    new_logo()
+    
 
     while True:
-        # Input Facebook Access Token
-        access_token = input(Fore.BLUE + "Enter your Facebook Access Token: ")
+        cookies_data = read_cookie()
+        if cookies_data is None:
+            break
 
-        if not access_token:
-            print(Fore.RED + "Error: The access token is empty or invalid.")
-            continue
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 11; RMX2144 Build/RKQ1.201217.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/103.0.5060.71 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/375.1.0.28.111;]'
+        }
 
-        # Display a preview of the token (first 10 characters)
-        token_name = access_token[:10]
-        print(Fore.BLUE + f"\nFacebook Access Token (Preview): {token_name}...")
+        valid_cookies = []
+        for cookie in cookies_data:
+            response = make_request('https://business.facebook.com/business_locations', headers, cookie)
+            if response:
+                token_eaag_match = re.search(r'(EAAG\w+)', response)
+                if token_eaag_match:
+                    valid_cookies.append((cookie, token_eaag_match.group(1)))
+                else:
+                    print("\033[1;31m[!] EAAG token not found in the response for cookie:", cookie)
+            else:
+                print("\033[1;31m[!] No response for cookie:", cookie)
 
-        # Fetch and display token details (user info)
-        if not get_token_details(access_token):
-            continue  # If token is invalid, ask for a new one
+        if not valid_cookies:
+            print("\033[1;31m[!] No valid cookie found. Exiting...")
+            break
 
-        # Fetch and list only active Messenger Groups
-        get_active_messenger_groups(access_token)
+        post_url = input("\033[1;34m[[=>]] FB post  link :")
+        target_id = extract_target_id(post_url)
+        if not target_id:
+            print("\033[1;31m[!] Invalid URL. Exiting...")
+            break
 
-        # Fetch and display all Pages with their Access Tokens
-        get_page_tokens(access_token)
-        break  # Exit the loop after successful execution
+        commenter_name = input("\033[1;36m[[=>]] Add Hater's Name : ")
+        delay = int(input("\033[1;32m[[=>]] Comments sending time (seconds) : "))
+        comment_file_path = input("\033[1;36m[[=>]] Add comment file path : ")
+
+        try:
+            with open(comment_file_path, 'r') as file:
+                comments = file.readlines()
+        except FileNotFoundError:
+            print("\033[1;31m[!] Comments file not found.")
+            break
+
+        x, cookie_index = 0, 0
+        while True:
+            try:
+                teks = comments[x].strip()
+                comment_with_name = f"{commenter_name}: {teks}"
+                current_cookie, token_eaag = valid_cookies[cookie_index]
+
+                # Fetch profile name and ID
+                profile_name, profile_id = get_profile_info(token_eaag)
+                if profile_name and profile_id:
+                    print(f"\033[1;32mLogged in as: {profile_name} (ID: {profile_id})")
+
+                data = {
+                    'message': comment_with_name,
+                    'access_token': token_eaag
+                }
+
+                response2 = requests.post(f'https://graph.facebook.com/{target_id}/comments/', data=data, cookies={'Cookie': current_cookie})
+                response_json = response2.json()
+
+                if 'id' in response_json:
+                    print(f"\033[1;32mComment sent successfully at {time.strftime('%Y-%m-%d %H:%M:%S')}: {comment_with_name}")
+                    lines2()
+                else:
+                    print("\033[1;31m[!] Comment failed:", response_json)
+
+                x = (x + 1) % len(comments)
+                cookie_index = (cookie_index + 1) % len(valid_cookies)
+                time.sleep(delay)
+
+            except RequestException as e:
+                print(f"\033[1;31m[!] Error making request: {e}")
+                time.sleep(5)
+                continue
+            except Exception as e:
+                print(f"\033[1;31m[!] An unexpected error occurred: {e}")
+                break
 
 if __name__ == "__main__":
     main()
